@@ -1,0 +1,226 @@
+syntax = "proto3";
+
+package google.communications.verifiedsms.v1;
+
+import "google/protobuf/field_mask.proto";
+
+option csharp_namespace = "Google.Communications.VerifiedSms.V1";
+option java_multiple_files = true;
+option java_outer_classname = "VerifiedSmsProto";
+option java_package = "com.google.communications.verifiedsms.v1";
+option objc_class_prefix = "GCVSMS";
+
+// Information about an agent's public key.
+message Key {
+  // "agents/{agentId}/key", where {agentId} is the Verified SMS agent
+  // identifier. For example, with the ID `growing-tree-bank`, the endpoint is
+  // https://verifiedsms.googleapis.com/v1/agents/growing-tree-bank/key.
+  string name = 1;
+
+  // A public key value, with a size of 120 bytes, created with elliptic curve
+  // NIST P-384.
+  bytes public_key = 2;
+}
+
+// Key update request.
+message UpdateKeyRequest {
+  // The key resource to update.
+  Key key = 1;
+
+  // The update mask applies to the resource. For the `FieldMask` definition,
+  // see
+  // https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#fieldmask
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Key get request.
+message GetKeyRequest {
+  // "agents/{agentId}/key", where {agentId} is the Verified SMS agent
+  // identifier. For example, with the ID `growing-tree-bank`, the endpoint is
+  // https://verifiedsms.googleapis.com/v1/agents/growing-tree-bank/key.
+  string name = 1;
+}
+
+// Hash values of SMS messages or message segments.
+message Hashes {
+  // Hash values for SMS messages or message segments. Agents are responsible
+  // for splitting messages into segements and creating hash values for each
+  // segment.
+  //
+  // Maximum 10,000 values per API call.
+  //
+  // Hash values are calculated with an SHA256-based HMAC key derivation
+  // function that includes {shared_secret} and {segment}. {shared_secret} is a
+  // computed shared secret based on agent and user keys created using an ECDH
+  // algorithm with elliptic curve NIST P-384.
+  //
+  // Each hash value is 32 bytes.
+  repeated bytes values = 1;
+
+  // Optional. Rate limit tokens used to detect data munging. The number of rate
+  // limit tokens should match the number of hash values.
+  //
+  // The rate limiting token is a one-way hashed conversation ID unique to the
+  // agent and device.
+  repeated bytes rate_limit_tokens = 2;
+
+  // Optional. If true, the Messages app doesn't display the verification status
+  // for messages matching the corresponding hashes.
+  //
+  // Only use this parameter to verify that the agent's hashing and
+  // configuration is setup correctly prior to launching the agent to all
+  // devices.
+  bool suppress_verification = 3;
+}
+
+// Request to store message hashes with Verified SMS.
+message StoreHashesRequest {
+  // "agents/{agentId}", where {agentId} is the Verified SMS agent identifier.
+  // For example, with the ID `growing-tree-bank`, the endpoint is
+  // https://verifiedsms.googleapis.com/v1/agents/growing-tree-bank:storeHashes.
+  string name = 1;
+
+  // Hash values of the SMS messages.
+  Hashes hashes = 2;
+
+  // Optional. A public key value, with a size of 120 bytes, created with
+  // elliptic curve NIST P-384.
+  //
+  // If the value is set, and it does not match the public key
+  // registered on the server for the corresponding agent, the platform returns
+  // a `400 INVALID_ARGUMENT` error.
+  bytes public_key = 3;
+}
+
+// SMS hash codes storing response
+message StoreHashesResponse {}
+
+// Request to get pubic keys for specified users.
+message BatchGetUserKeysRequest {
+  // User phone numbers in E.164 format. For example, `+12223334444`.
+  //
+  // Maximum 10,000 values per API call.
+  repeated string phone_numbers = 1;
+}
+
+// A user's public key.
+message UserKey {
+  // A user's phone number in E.164 format. For example, `+12223334444`.
+  string phone_number = 1;
+
+  // A public key value, with a size of 120 bytes, created with elliptic curve
+  // NIST P-384.
+  bytes public_key = 2;
+}
+
+// Response to request for user public keys.
+message BatchGetUserKeysResponse {
+  // List of user public keys.
+  repeated UserKey user_keys = 1;
+}
+
+// Request to get pubic keys for specified users.
+message BatchGetEnabledUserKeysRequest {
+  // User phone numbers in E.164 format.
+  // For example, `enabledUserKeys/+12223334444`.
+  //
+  // Maximum 10,000 values per API call.
+  repeated string phone_numbers = 1;
+}
+
+// Response to request for user public keys.
+message BatchGetEnabledUserKeysResponse {
+  // List of enabled user public keys. Users not enabled will not have a public
+  // key.
+  repeated EnabledUserKey user_keys = 1;
+}
+
+// A public key of an enabled user.
+//
+// This object includes a public key of Verified SMS user who is enabled on
+// the platform. Users not enabled for Verified SMS will not have a public key.
+message EnabledUserKey {
+  // A user's phone number in E.164 format. For example, `+12223334444`.
+  string phone_number = 1;
+
+  // A public key value, with a size of 120 bytes, created with elliptic curve
+  // NIST P-384.
+  bytes public_key = 2;
+}
+
+// Request to store message metadata with Verified SMS.
+message BatchCreateMessagesRequest {
+  // list of messages metadata.
+  //
+  // Maximum 10,000 values per API call.
+  repeated Message messages = 1;
+}
+
+// Message metadata storing response
+message BatchCreateMessagesResponse {}
+
+// Additional metadata for SMS message and segments.
+message Message {
+  // Hash values for SMS messages or message segments. Agents are responsible
+  // for splitting messages into segments and creating hash values for each
+  // segment.
+  //
+  // Hashes are calculated with an SHA256-based HMAC key derivation
+  // function that includes {shared_secret} and {segment}. {shared_secret} is a
+  // computed shared secret based on agent and user keys created using an ECDH
+  // algorithm with elliptic curve NIST P-384.
+  //
+  // Each hash value is 32 bytes.
+  bytes hash = 1;
+
+  // The unique identifier of the Verified SMS agent.
+  //
+  // agentId must match the identifier of the agent who's public key was used
+  // in the computation of the {shared_sender} during hash creation.
+  string agent_id = 2;
+
+  // Rate limit token used to detect data munging.
+  //
+  // The rate limiting token is a one-way hashed conversation ID unique to the
+  // agent and device.
+  bytes rate_limit_token = 3;
+
+  // Payload that the agent receives in an even of successful
+  // SMS verification.
+  //
+  // Maximum size is 120 bytes.
+  bytes postback_data = 4;
+}
+
+// Verified SMS service.
+service VerifiedSmsService {
+  // Updates an agent's public key.
+  //
+  // Update the public key any time an agent's private/public key pair changes.
+  rpc UpdateKey(UpdateKeyRequest) returns (Key) {}
+
+  // Gets an agent's public key.
+  rpc GetKey(GetKeyRequest) returns (Key) {}
+
+  // Stores message hashes with Verified SMS.
+  //
+  // Send messages over SMS only after you receive a `200 OK` response from this
+  // API call. Otherwise, messages may not be appear as verified on user
+  // devices.
+  rpc StoreHashes(StoreHashesRequest) returns (StoreHashesResponse) {}
+
+  // Stores message metadata with Verified SMS.
+  //
+  // Send messages over SMS only after you receive a `200 OK` response from this
+  // API call. Otherwise, messages may not be appear as verified on user
+  // devices.
+  rpc BatchCreateMessages(BatchCreateMessagesRequest)
+      returns (BatchCreateMessagesResponse) {}
+
+  // Gets public keys for specified users.
+  //
+  // Use these keys to generate shared secrets with an agent's private key and
+  // create messages hashes.
+  rpc BatchGetEnabledUserKeys(BatchGetEnabledUserKeysRequest)
+      returns (BatchGetEnabledUserKeysResponse) {}
+}

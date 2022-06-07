@@ -1,0 +1,96 @@
+
+plugins {
+    id 'java'
+    id 'application'
+    id 'maven-publish'
+    id 'com.google.protobuf' version '0.8.8'
+}
+
+mainClassName = 'com.softtech.MainClass'
+
+ext.vsmsClientVersion = '1.2'
+
+group = 'com.softtech'
+version = ext.vsmsClientVersion + '-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+    mavenLocal()
+    
+    maven {
+        url = 'https://repo.maven.apache.org/maven2'
+    }
+}
+
+ext.vsmsLocalLib = { name ->
+    return 'lib/vsmsagent/' + name + '/' + ext.vsmsClientVersion + '/' + name + '-' + ext.vsmsClientVersion + '.jar'
+}
+
+dependencies {
+    compile files(vsmsLocalLib('lib_verified_sms_client'))
+    compile files(vsmsLocalLib('lib_verified_sms_data_munging'))
+    compile files(vsmsLocalLib('lib_verified_sms_hashing'))
+    compile 'com.google.auth:google-auth-library-oauth2-http:0.21.1'
+    compile 'com.google.guava:guava:28.1-jre'
+    compile 'com.google.crypto.tink:tink:1.2.2'
+    compile 'io.grpc:grpc-auth:1.23.0'
+    compile 'io.grpc:grpc-netty-shaded:1.23.0'
+    compile 'io.grpc:grpc-protobuf:1.23.0'
+    compile 'io.grpc:grpc-stub:1.23.0'
+    compile 'javax.annotation:javax.annotation-api:1.3.1'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.58'
+    compile 'mysql:mysql-connector-java:8.0.15'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from(components.java)
+        }
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+task runExample(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = project.hasProperty("mainClass") ? project.getProperty("mainClass") : "com.softtech.MainClass"
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.9.0"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.23.0'
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
+}
+
+//jar {
+//  manifest {
+//    attributes(
+//      'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+//      'Main-Class': 'com.softtech.Main'
+//    )
+//  }
+//}
+
+//jar {
+//    manifest {
+//        attributes "Main-Class": "com.softtech.MainClass"
+//    }
+//
+//    from { (configurations.runtime).collect { it.isDirectory() ? it : zipTree(it) } } 
+//    {
+//        exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+//    }
+//}
