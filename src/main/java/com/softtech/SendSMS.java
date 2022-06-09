@@ -733,7 +733,7 @@ public class SendSMS extends Thread {
                 requestCounter.incrementAndGet();
                 try {
                     byte[] msg = byteMessagesArray[msgLoop - 1];
-                    if (!ab_unicode && (SendSMS.ROUTE_ID == 22 || SendSMS.ROUTE_ID == 23)) {
+                    if (!ab_unicode) {
                         List<Byte> arrays = new ArrayList<>();
                         for (byte b : msg) {
                             if (b != 27) {  // escape
